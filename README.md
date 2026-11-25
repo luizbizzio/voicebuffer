@@ -2,6 +2,8 @@
 
 **Adaptive and manual buffering for incoming voice on Discord Desktop.** An experimental custom plugin for Vencord and Equicord.
 
+![VoiceBuffer Quick Panel with Adaptive mode active above Discord's voice controls](assets/voicebuffer-cover.png)
+
 When voice packets arrive unevenly, some reach Discord too late to play. VoiceBuffer can ask Discord to hold incoming voice a little longer, giving delayed packets more time to arrive. The trade-off is extra listening delay. The adjustment applies to the voice you hear in calls. Microphone transmission and screen-share playback are outside its scope.
 
 > **Development paused.** This prototype targets Electron-based Discord Desktop.
@@ -70,6 +72,10 @@ VoiceBuffer changes two settings on the native connection. The **jitter level** 
 The plugin combines media-engine statistics with recent Discord events to estimate jitter, changes in round-trip time, and optional packet loss. It writes the chosen jitter level through Discord's transport options and requests the playback floor through `setMinimumOutputDelay()` when available. [Mode logic](index.tsx#L1469-L1618) · [Native connection settings](index.tsx#L1678-L1729)
 
 Keep **Postpone Decode** off for ordinary buffer tests. It changes decode scheduling independently of the buffer floor.
+
+<a href="assets/voicebuffer-settings.png"><img src="assets/voicebuffer-settings.png" width="460" alt="VoiceBuffer settings with Adaptive selected and the protection range set from L1 to L6"></a>
+
+_Example configuration with the Adaptive range set to L1–L6._
 
 ## Check whether it helps
 
