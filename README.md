@@ -1,94 +1,83 @@
-# VoiceBuffer
+<h1 align="center">VoiceBuffer</h1>
 
-**Adaptive and manual buffering for incoming voice on Discord Desktop.** An experimental custom plugin for Vencord and Equicord.
+<p align="center"><strong>Adaptive and manual buffering for incoming voice on Discord Desktop.</strong><br>
+An experimental plugin for Vencord and Equicord.</p>
 
-![VoiceBuffer Quick Panel with Adaptive mode active above Discord's voice controls](assets/voicebuffer-cover.png)
+<p align="center"><a href="#install">Install</a> · <a href="#controls">Controls</a> · <a href="#check-the-buffer">Check the buffer</a></p>
 
-When voice packets arrive unevenly, some reach Discord too late to play. VoiceBuffer can ask Discord to hold incoming voice a little longer, giving delayed packets more time to arrive. The trade-off is extra listening delay. The adjustment applies to the voice you hear in calls. Microphone transmission and screen-share playback are outside its scope.
+<p align="center">
+  <img src="assets/voicebuffer-cover.png" width="534" alt="VoiceBuffer Quick Panel showing Adaptive mode, network statistics, and a 20 ms minimum buffer request">
+</p>
 
-> **Development paused.** This prototype targets Electron-based Discord Desktop.
+When voice packets arrive unevenly, some miss their playback deadline. VoiceBuffer asks Discord to wait a little longer so more of those packets can arrive in time. You trade some playback delay for a chance at fewer cuts. The adjustment affects the voice **you hear** in calls. Your microphone and screen-share playback are outside its scope.
 
 ## Install
 
-You need Discord Desktop, Git, Node.js 22 or newer, and pnpm. VoiceBuffer is installed as a custom plugin in a Vencord or Equicord source build.
+**You need Discord Desktop with Vencord or Equicord already installed.** Use the instructions for the mod you already have.
 
-### 1. Open your Vencord or Equicord checkout
+### Equicord with UserPluginInstaller
 
-If you already build your client mod from source, open its repository in a terminal and go to step 2. For a fresh setup, run the block for the mod you use.
+If you already use an Equicord development build with **UserPluginInstaller** enabled, paste `https://github.com/luizbizzio/voicebuffer` into a Discord message and click **Install Plugin**, then restart if prompted. [Equicord installer guide](https://docs.equicord.org/installing/custom-plugin/#installing-plugins-via-userplugininstaller)
 
-**Vencord**
+### One-line install for a standard build
 
-```sh
-git clone https://github.com/Vendicated/Vencord.git
-cd Vencord
-```
+With **Git**, **Node.js 22+**, and **pnpm** available, close Discord Desktop fully. Open **Git Bash** or **PowerShell 7** in a folder where you want to keep the custom build and paste one line. The installer at the end applies the build to your existing Discord Desktop installation.
 
 **Equicord**
 
 ```sh
-git clone https://github.com/Equicord/Equicord.git
-cd Equicord
+git clone --depth 1 https://github.com/Equicord/Equicord.git Equicord-VoiceBuffer && cd Equicord-VoiceBuffer && git clone --depth 1 https://github.com/luizbizzio/voicebuffer.git src/userplugins/voicebuffer && pnpm install --frozen-lockfile && pnpm build && pnpm inject
 ```
 
-### 2. Add VoiceBuffer and build
-
-Run these commands from the root of your Vencord or Equicord checkout.
+**Vencord**
 
 ```sh
-pnpm install --frozen-lockfile
-git clone https://github.com/luizbizzio/voicebuffer.git src/userplugins/voicebuffer
-pnpm build
+git clone --depth 1 https://github.com/Vendicated/Vencord.git Vencord-VoiceBuffer && cd Vencord-VoiceBuffer && git clone --depth 1 https://github.com/luizbizzio/voicebuffer.git src/userplugins/voicebuffer && pnpm install --frozen-lockfile && pnpm build && pnpm inject
 ```
 
-The plugin entry point should be at `src/userplugins/voicebuffer/index.tsx`. If you prefer to copy a single file, place [`index.tsx`](index.tsx) at that path and run the build.
+Select your Discord installation when the installer opens. Launch Discord, find **VoiceBuffer** in your mod's **Plugins** settings, and enable it. [Equicord source builds](https://docs.equicord.org/installing/#installing-your-custom-build) · [Vencord source builds](https://docs.vencord.dev/installing/#installing-your-custom-build)
 
-### 3. Install the build and enable the plugin
+<details>
+<summary>Already using a source build?</summary>
 
-The first time you use a build from this checkout, run `pnpm inject` and select your Discord Desktop installation. If Discord already uses this checkout, a rebuild and full restart are enough. Open **User Settings → Plugins** in Vencord or Equicord, search for **VoiceBuffer**, and enable it. [Vencord build guide](https://docs.vencord.dev/installing/#installing-your-custom-build) · [Equicord build guide](https://docs.equicord.org/installing/#installing-your-custom-build)
+Run this from the root of the Vencord or Equicord checkout that Discord already uses, then restart Discord and enable **VoiceBuffer**.
 
-Equicord development builds also offer **UserPluginInstaller**. Follow its instructions with this repository's URL if you already use it. [Equicord UserPluginInstaller guide](https://docs.equicord.org/installing/custom-plugin/#installing-plugins-via-userplugininstaller)
+```sh
+git clone https://github.com/luizbizzio/voicebuffer.git src/userplugins/voicebuffer && pnpm build
+```
 
-To update a Git-based installation, run `git -C src/userplugins/voicebuffer pull --ff-only`, rebuild, and restart Discord. To remove VoiceBuffer from your build, disable it, remove its folder from `src/userplugins`, rebuild, and restart.
+To update, run `git -C src/userplugins/voicebuffer pull --ff-only && pnpm build` and restart. To remove it, disable the plugin, delete its folder from `src/userplugins`, rebuild, and restart.
 
-## Use VoiceBuffer
+</details>
 
-Join a voice call and hover over **VB** beside Discord's voice controls. The Quick Panel can switch VoiceBuffer on or off and select **Auto** or **L1–L4**. It also shows ping, ping variation, packet loss, and `Min Buffer*` when available. Use the gear button or the plugin list to open the full settings, including **Custom (Advanced)**. If **VB** is missing, you can still use the plugin settings.
+## Controls
 
-`Min Buffer*` is the minimum delay VoiceBuffer is requesting. Actual buffering can be higher. Hover over the value for the measured buffer when Discord exposes it.
+Join a voice call and hover over **VB** beside Discord's voice controls. Use the panel to toggle VoiceBuffer or choose **Auto** or **L1–L4**. The gear opens the full settings, including **Custom (Advanced)**.
 
-### How the modes differ
-
-VoiceBuffer changes two settings on the native connection. The **jitter level** is an internal Discord transport setting. The **minimum output delay** is the playback floor VoiceBuffer requests in milliseconds.
-
-| Mode | Discord jitter level | Requested playback floor |
+| Mode | Discord jitter level | Minimum delay requested |
 | --- | --- | --- |
-| **Adaptive** (default) | Changes with network conditions, from L1 to L4 by default | Follows the rules for the current level |
-| **L1 · Low Latency** | Holds L1 | 20–35 ms |
-| **L2 · Balanced** | Holds L2 | 35–60 ms |
-| **L3 · Stable** | Holds L3 | 50–90 ms |
-| **L4 · Maximum Stability** | Holds L4 | 65–120 ms |
-| **Custom (Advanced)** | Uses your **Custom Jitter Level** | Holds the value in **Custom Min Buffer**, from 0 to 200 ms |
+| **Auto / Adaptive** | Varies with network conditions. The default range is L1–L4. | Follows the current level |
+| **L1 · Low Latency** | Fixed at L1 | 20–35 ms |
+| **L2 · Balanced** | Fixed at L2 | 35–60 ms |
+| **L3 · Stable** | Fixed at L3 | 50–90 ms |
+| **L4 · Maximum Stability** | Fixed at L4 | 65–120 ms |
+| **Custom (Advanced)** | Set by **Custom Jitter Level** | A fixed 0–200 ms request set by **Custom Min Buffer** |
 
-The plugin combines media-engine statistics with recent Discord events to estimate jitter, changes in round-trip time, and optional packet loss. It writes the chosen jitter level through Discord's transport options and requests the playback floor through `setMinimumOutputDelay()` when available. [Mode logic](index.tsx#L1469-L1618) · [Native connection settings](index.tsx#L1678-L1729)
+**Min Buffer\*** shows the requested floor. Discord can buffer more, and the measured value appears in the tooltip when available. [Mode logic](index.tsx#L1469-L1618) · [Native buffer settings](index.tsx#L1678-L1729)
 
-Keep **Postpone Decode** off for ordinary buffer tests. It changes decode scheduling independently of the buffer floor.
+<p align="center">
+  <a href="assets/voicebuffer-settings.png"><img src="assets/voicebuffer-settings.png" width="480" alt="VoiceBuffer plugin settings with Adaptive sensitivity, protection limits, packet loss signal, and Quick Panel enabled"></a><br>
+  <em>Full settings with the Adaptive range set to L1–L6.</em>
+</p>
 
-<a href="assets/voicebuffer-settings.png"><img src="assets/voicebuffer-settings.png" width="460" alt="VoiceBuffer settings with Adaptive selected and the protection range set from L1 to L6"></a>
+## Check the buffer
 
-_Example configuration with the Adaptive range set to L1–L6._
+In a call, open the plugin settings and click **Show Advanced / Diagnostics → Start Verification**. Keep the panel open while someone else speaks. Once incoming audio is detected, the test spends about 24 seconds alternating between 0 and 200 ms at L0. It reports the requested floor and any buffer measurements Discord exposes. [Verification logic](index.tsx#L1105-L1131)
 
-## Check whether it helps
+To find out whether the audio improves, compare two calls with the same source audio and packet timing. For the baseline, restart Discord with VoiceBuffer disabled in the plugin list. For the second run, use **Custom** with **Custom Jitter Level** at `0`, **Postpone Decode** off, and a floor such as 40 ms. Compare how much audio the decoder had to reconstruct and how much playback delay was added. A restart makes the baseline more reliable because simulated tests found that the plugin can miss a reset during shutdown. [WebRTC receiver metrics](https://www.w3.org/TR/webrtc-stats/#inboundrtpstats-dict)
 
-**To check whether Discord responds to the request**, open the plugin settings during a call, click **Show Advanced / Diagnostics**, then click **Start Verification** under **Native Request Verification**. Keep the panel open and have another participant keep speaking. Once VoiceBuffer detects incoming audio, it spends about 24 seconds alternating between 0 and 200 ms while holding the jitter level at L0 and using Discord's default decode setting. The result reports the requested floor and, when available, Discord's target or the observed buffer. [Verification sequence](index.tsx#L1105-L1131)
+## Project status
 
-**To compare audio**, restart Discord with VoiceBuffer disabled in the host's plugin list, then join a call for the baseline. In another run, choose **Custom (Advanced)**, set **Custom Jitter Level** to `0`, and try a **Custom Min Buffer** of 40 or 80 ms. Keep the source audio and packet-delay pattern the same across runs. Compare how much audio the receiver had to reconstruct and how much delay the buffer added, where those statistics are available. [WebRTC receiver metrics](https://www.w3.org/TR/webrtc-stats/#inboundrtpstats-dict)
+Development is paused. VoiceBuffer built and passed type checking with [Equicord 1.15.18.2](https://github.com/Equicord/Equicord/tree/8d63e9694b2ef5195806b3f8b2e03135a4b4ea2c) and [Vencord 1.15.19](https://github.com/Vendicated/Vencord/tree/d086992fb674299a2fa05ac6432edc3a777389f3). On Windows Discord Desktop 1.0.9269, static inspection traced the request to Discord's native receive buffer. The effect on audible cuts in real calls remains unverified. Serein and Discord's Project Phoenix desktop rewrite use different integrations.
 
-The restart matters for baseline tests. Simulated tests found that pending stats could reapply the setting after shutdown and a failed reset to 0 ms could be skipped on retry.
-
-## What was verified
-
-- VoiceBuffer built and passed type checking with **Vencord 1.15.19** and **Equicord 1.15.18.2**. [Vencord build revision](https://github.com/Vendicated/Vencord/tree/d086992fb674299a2fa05ac6432edc3a777389f3) · [Equicord build revision](https://github.com/Equicord/Equicord/tree/8d63e9694b2ef5195806b3f8b2e03135a4b4ea2c)
-- Static inspection of Discord Desktop **1.0.9269 on Windows** traced the plugin's delay request to the native receive jitter buffer. That interface can change between Discord builds. A reduction in audible cuts during real calls remains unverified.
-- Serein and Discord's Project Phoenix desktop rewrite would need separate integrations. [Serein](https://github.com/ViceVerse-cz/Serein) · [Project Phoenix](https://www.youtube.com/watch?v=zgdPbgWaobQ)
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for test cases and [LICENSE](LICENSE) for the GNU General Public License.
+[Contribution and testing notes](CONTRIBUTING.md) · [GNU General Public License](LICENSE)
