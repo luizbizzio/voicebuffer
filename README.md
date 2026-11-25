@@ -50,19 +50,30 @@ To update a Git-based installation, run `git -C src/userplugins/voicebuffer pull
 
 ## Use VoiceBuffer
 
-Join a voice call and open the plugin settings, or hover over **VB** beside Discord's voice controls. The Quick Panel shows the current mode and available connection measurements. If the button is missing, check that **Quick Panel** is enabled. The plugin settings provide the same mode controls.
+Join a voice call and hover over **VB** beside Discord's voice controls. The Quick Panel can switch VoiceBuffer on or off and select **Auto** or **L1–L4**. It also shows ping, ping variation, packet loss, and `Min Buffer*` when available. Use the gear button or the plugin list to open the full settings, including **Custom (Advanced)**. If **VB** is missing, you can still use the plugin settings.
 
-| Mode | When to use it |
-| --- | --- |
-| **Adaptive** | Start here if you want the plugin to adjust buffering as network conditions change. |
-| **L1–L4** | Choose a profile from **Low Latency** to **Maximum Stability**. Each profile can still adjust its requested delay as conditions change. |
-| **Custom (Advanced)** | Use **Custom Min Buffer** to request a fixed minimum from 0 to 200 ms. This is the requested floor. Discord can use a higher buffer when it needs to. |
+`Min Buffer*` is the minimum delay VoiceBuffer is requesting. Actual buffering can be higher. Hover over the value for the measured buffer when Discord exposes it.
+
+### How the modes differ
+
+VoiceBuffer changes two settings on the native connection. The **jitter level** is an internal Discord transport setting. The **minimum output delay** is the playback floor VoiceBuffer requests in milliseconds.
+
+| Mode | Discord jitter level | Requested playback floor |
+| --- | --- | --- |
+| **Adaptive** (default) | Changes with network conditions, from L1 to L4 by default | Follows the rules for the current level |
+| **L1 · Low Latency** | Holds L1 | 20–35 ms |
+| **L2 · Balanced** | Holds L2 | 35–60 ms |
+| **L3 · Stable** | Holds L3 | 50–90 ms |
+| **L4 · Maximum Stability** | Holds L4 | 65–120 ms |
+| **Custom (Advanced)** | Uses your **Custom Jitter Level** | Holds the value in **Custom Min Buffer**, from 0 to 200 ms |
+
+The plugin combines media-engine statistics with recent Discord events to estimate jitter, changes in round-trip time, and optional packet loss. It writes the chosen jitter level through Discord's transport options and requests the playback floor through `setMinimumOutputDelay()` when available. [Mode logic](index.tsx#L1469-L1618) · [Native connection settings](index.tsx#L1678-L1729)
 
 Keep **Postpone Decode** off for ordinary buffer tests. It changes decode scheduling independently of the buffer floor.
 
 ## Check whether it helps
 
-**To check whether Discord responds to the request**, open **Advanced / Diagnostics → Start Verification** during a call. Keep the panel open and have another participant speak. The test alternates between 0 ms and 200 ms twice. It shows the requested floor, Discord's target, and the observed buffer when those measurements are available.
+**To check whether Discord responds to the request**, open the plugin settings during a call, click **Show Advanced / Diagnostics**, then click **Start Verification** under **Native Request Verification**. Keep the panel open and have another participant keep speaking. Once VoiceBuffer detects incoming audio, it spends about 24 seconds alternating between 0 and 200 ms while holding the jitter level at L0 and using Discord's default decode setting. The result reports the requested floor and, when available, Discord's target or the observed buffer. [Verification sequence](index.tsx#L1105-L1131)
 
 **To compare audio**, restart Discord with VoiceBuffer disabled in the host's plugin list, then join a call for the baseline. In another run, choose **Custom (Advanced)**, set **Custom Jitter Level** to `0`, and try a **Custom Min Buffer** of 40 or 80 ms. Keep the source audio and packet-delay pattern the same across runs. Compare how much audio the receiver had to reconstruct and how much delay the buffer added, where those statistics are available. [WebRTC receiver metrics](https://www.w3.org/TR/webrtc-stats/#inboundrtpstats-dict)
 
